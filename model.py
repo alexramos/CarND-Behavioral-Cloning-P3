@@ -49,20 +49,27 @@ def gen_imgs(samples, batch_size):
             y_train = np.array(angles)
             yield X_train, y_train
 
-# Load img paths and steering values
-input_dir = Path('data/IMG/')
-headers = ['center_image', 'left_image', 'right_image',
-	'steering', 'throttle', 'brake', 'speed']
-samples = pd.read_csv('data/driving_log.csv', header=None, names=headers) #, skiprows=1)
+def load_samples(input_dir):
+	headers = ('center_image', 'left_image', 'right_image',
+		'steering', 'throttle', 'brake', 'speed')
+	samples = pd.read_csv(input_dir / 'driving_log.csv', header=None, names=headers)
 
-# Training images were generated on Windows machine, fix paths to work on Linux/MacOS machines
-fix_path = lambda p: input_dir / PureWindowsPath(p).parts[-1]
-for col in ['center_image', 'left_image', 'right_image']:
-	samples[col]= samples[col].apply(fix_path)
+	# Training images were generated on Windows machine, fix paths to work on Linux/MacOS machines
+	fix_path = lambda p: input_dir / 'IMG' / PureWindowsPath(p).parts[-1]
+
+	for col in ['center_image', 'left_image', 'right_image']:
+		samples[col]= samples[col].apply(fix_path)
+	return samples
+
+base_input_dir = Path('data')
+data_dirs = ('track1', 'track1_reversed', 'track2', 'track2_reversed')
+samples = pd.concat([load_samples(base_input_dir / p) for p in data_dirs],
+	ignore_index=True)
 
 # Drop unneccessary columns and reshape dataframe
 samples.drop(['throttle', 'brake', 'speed'], axis=1, inplace=True)
-samples = pd.melt(samples, id_vars=['steering'], value_vars=['center_image', 'left_image', 'right_image'],
+samples = pd.melt(samples, id_vars=['steering'],
+	value_vars=['center_image', 'left_image', 'right_image'],
     var_name='camera_position', value_name='img_path')
 samples['camera_position'] = samples.camera_position.str.replace('_image', '')
 
