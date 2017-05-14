@@ -85,27 +85,27 @@ train_generator = gen_imgs(train_samples, batch_size=BATCH_SIZE)
 validation_generator = gen_imgs(validation_samples, batch_size=BATCH_SIZE)
 
 
-with K.get_session() as sesh:
-    # Define network architecture
-    model = Sequential()
-    model.add(Lambda(lambda x: x / 255.0 - 0.5, input_shape=(160, 320, 3)))
-    model.add(Cropping2D(cropping=((70, 25), (0,0))))
-    model.add(Convolution2D(24, (5, 5), strides=(2, 2), activation='relu'))
-    model.add(Convolution2D(36, (5, 5), strides=(2, 2), activation='relu'))
-    model.add(Convolution2D(48, (5, 5), strides=(2, 2), activation='relu'))
-    model.add(Convolution2D(64, (3, 3), activation='relu'))
-    model.add(Convolution2D(64, (3, 3), activation='relu'))
-    model.add(Flatten())
-    model.add(Dense(100))
-    model.add(Dense(50))
-    model.add(Dense(10))
-    model.add(Dense(1))
 
-    model.compile(loss='mse', optimizer='adam')
+# Define network architecture
+model = Sequential()
+model.add(Lambda(lambda x: x / 255.0 - 0.5, input_shape=(160, 320, 3)))
+model.add(Cropping2D(cropping=((70, 25), (0,0))))
+model.add(Convolution2D(24, (5, 5), strides=(2, 2), activation='relu'))
+model.add(Convolution2D(36, (5, 5), strides=(2, 2), activation='relu'))
+model.add(Convolution2D(48, (5, 5), strides=(2, 2), activation='relu'))
+model.add(Convolution2D(64, (3, 3), activation='relu'))
+model.add(Convolution2D(64, (3, 3), activation='relu'))
+model.add(Flatten())
+model.add(Dense(100))
+model.add(Dense(50))
+model.add(Dense(10))
+model.add(Dense(1))
 
-    model.fit_generator(train_generator, np.ceil(len(train_samples) / BATCH_SIZE),
-        validation_data=validation_generator,
-        validation_steps=np.ceil(len(validation_samples) / BATCH_SIZE),
-        epochs=3)
+model.compile(loss='mse', optimizer='adam')
 
-    model.save('model.h5')
+model.fit_generator(train_generator, np.ceil(len(train_samples) / BATCH_SIZE),
+    validation_data=validation_generator,
+    validation_steps=np.ceil(len(validation_samples) / BATCH_SIZE),
+    epochs=3)
+
+model.save('model.h5')
