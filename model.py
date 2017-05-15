@@ -62,7 +62,7 @@ def load_samples(input_dir):
     return samples
 
 base_input_dir = Path('data')
-data_dirs = ('track1', 'track1_reversed', 'track2', 'track2_reversed')
+data_dirs = ('track1', 'track1_reversed', 'track2', 'track2_reversed', 'track2_hairpins')
 samples = pd.concat([load_samples(base_input_dir / p) for p in data_dirs],
     ignore_index=True)
 
@@ -74,17 +74,17 @@ samples = pd.melt(samples, id_vars=['steering'],
 samples['camera_position'] = samples.camera_position.str.replace('_image', '')
 
 # remove images leading to trouble at hairpin
-imgs_to_remove = [
-    '2017_05_13_21_49_28_292',
-    '2017_05_13_21_49_28_360',
-    '2017_05_13_21_51_44_832',
-    '2017_05_13_21_51_44_900',
-    '2017_05_13_21_51_44_971',
-    '2017_05_13_21_53_57_757',
-    '2017_05_13_21_53_57_827',
-]
-for img_to_remove in imgs_to_remove:
-    samples = samples[~samples.img_path.apply(lambda p: img_to_remove in str(p))]
+# imgs_to_remove = [
+#     '2017_05_13_21_49_28_292',
+#     '2017_05_13_21_49_28_360',
+#     '2017_05_13_21_51_44_832',
+#     '2017_05_13_21_51_44_900',
+#     '2017_05_13_21_51_44_971',
+#     '2017_05_13_21_53_57_757',
+#     '2017_05_13_21_53_57_827',
+# ]
+# for img_to_remove in imgs_to_remove:
+#     samples = samples[~samples.img_path.apply(lambda p: img_to_remove in str(p))]
 
 # Augment data with flipped images
 samples['flip_img'] = False # flag to let gen_imgs know whether to flip image 
@@ -96,17 +96,15 @@ train_samples, validation_samples = train_test_split(samples, test_size=0.2)
 train_generator = gen_imgs(train_samples, batch_size=BATCH_SIZE)
 validation_generator = gen_imgs(validation_samples, batch_size=BATCH_SIZE)
 
-
-
 # Define network architecture
 model = Sequential()
 model.add(Lambda(lambda x: x / 255.0 - 0.5, input_shape=(160, 320, 3)))
 model.add(Cropping2D(cropping=((70, 25), (0,0))))
-model.add(Convolution2D(24, (5, 5), strides=(2, 2), activation='relu'))
-model.add(Convolution2D(36, (5, 5), strides=(2, 2), activation='relu'))
-model.add(Convolution2D(48, (5, 5), strides=(2, 2), activation='relu'))
-model.add(Convolution2D(64, (3, 3), activation='relu'))
-model.add(Convolution2D(64, (3, 3), activation='relu'))
+model.add(Convolution2D(24, (5, 5), strides=(2, 2), activation='elu'))
+model.add(Convolution2D(36, (5, 5), strides=(2, 2), activation='elu'))
+model.add(Convolution2D(48, (5, 5), strides=(2, 2), activation='elu'))
+model.add(Convolution2D(64, (3, 3), activation='elu'))
+model.add(Convolution2D(64, (3, 3), activation='elu'))
 model.add(Flatten())
 model.add(Dense(100))
 model.add(Dense(50))
@@ -118,6 +116,6 @@ model.compile(loss='mse', optimizer='adam')
 model.fit_generator(train_generator, np.ceil(len(train_samples) / BATCH_SIZE),
     validation_data=validation_generator,
     validation_steps=np.ceil(len(validation_samples) / BATCH_SIZE),
-    epochs=3)
+    epochs=5)
 
 model.save('model.h5')
