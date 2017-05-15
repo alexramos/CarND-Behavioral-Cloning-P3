@@ -73,19 +73,6 @@ samples = pd.melt(samples, id_vars=['steering'],
     var_name='camera_position', value_name='img_path')
 samples['camera_position'] = samples.camera_position.str.replace('_image', '')
 
-# remove images leading to trouble at hairpin
-# imgs_to_remove = [
-#     '2017_05_13_21_49_28_292',
-#     '2017_05_13_21_49_28_360',
-#     '2017_05_13_21_51_44_832',
-#     '2017_05_13_21_51_44_900',
-#     '2017_05_13_21_51_44_971',
-#     '2017_05_13_21_53_57_757',
-#     '2017_05_13_21_53_57_827',
-# ]
-# for img_to_remove in imgs_to_remove:
-#     samples = samples[~samples.img_path.apply(lambda p: img_to_remove in str(p))]
-
 # Augment data with flipped images
 samples['flip_img'] = False # flag to let gen_imgs know whether to flip image 
 samples_flipped = samples.copy()
