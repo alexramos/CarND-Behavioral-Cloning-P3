@@ -10,7 +10,6 @@ from keras.layers import Flatten, Dense, Lambda, Cropping2D
 from keras.layers.convolutional import Convolution2D
 from keras.layers.pooling import MaxPooling2D
 from sklearn.model_selection import train_test_split
-from keras import backend as K
 
 OFFCENTER_CAMERA_STEERING_CORRECTION = 0.2
 BATCH_SIZE = 32
@@ -73,6 +72,19 @@ samples = pd.melt(samples, id_vars=['steering'],
     value_vars=['center_image', 'left_image', 'right_image'],
     var_name='camera_position', value_name='img_path')
 samples['camera_position'] = samples.camera_position.str.replace('_image', '')
+
+# remove images leading to trouble at hairpin
+imgs_to_remove = [
+    '2017_05_13_21_49_28_292',
+    '2017_05_13_21_49_28_360',
+    '2017_05_13_21_51_44_832',
+    '2017_05_13_21_51_44_900',
+    '2017_05_13_21_51_44_971',
+    '2017_05_13_21_53_57_757',
+    '2017_05_13_21_53_57_827',
+]
+for img_to_remove in imgs_to_remove:
+    samples = samples[~samples.img_path.apply(lambda p: img_to_remove in str(p))]
 
 # Augment data with flipped images
 samples['flip_img'] = False # flag to let gen_imgs know whether to flip image 
