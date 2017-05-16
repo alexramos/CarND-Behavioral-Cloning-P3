@@ -15,7 +15,16 @@ OFFCENTER_CAMERA_STEERING_CORRECTION = 0.2
 BATCH_SIZE = 32
 
 def gen_imgs(samples, batch_size):
-    '''Train '''
+    """This function returns a generator that 
+    yields an ndarray of `batch_size` images.
+
+    `samples` should be a dataframe with the following columns:
+        img_path
+        camera_position
+        steering
+        flip_img
+    """
+
     num_samples = len(samples)
     while 1: # Loop forever so the generator never terminates
         samples = samples.sample(frac=1) # shuffle samples
@@ -50,6 +59,7 @@ def gen_imgs(samples, batch_size):
             yield X_train, y_train
 
 def load_samples(input_dir):
+    """Returns dataframe of driving_log.csv"""
     headers = ('center_image', 'left_image', 'right_image',
         'steering', 'throttle', 'brake', 'speed')
     samples = pd.read_csv(input_dir / 'driving_log.csv', header=None, names=headers)
@@ -61,8 +71,9 @@ def load_samples(input_dir):
         samples[col]= samples[col].apply(fix_path)
     return samples
 
+# Load image sample paths and steering data
 base_input_dir = Path('data')
-data_dirs = ('track1', 'track1_reversed', 'track2', 'track2_reversed', 'track2_hairpins')
+data_dirs = ('track1', 'track1_reversed', 'track2','track2_reversed', 'track2_hairpins')
 samples = pd.concat([load_samples(base_input_dir / p) for p in data_dirs],
     ignore_index=True)
 
@@ -79,11 +90,12 @@ samples_flipped = samples.copy()
 samples['flip_img'] = True
 samples = pd.concat([samples, samples_flipped], ignore_index=True)
 
+# Split data into train, validation sets
 train_samples, validation_samples = train_test_split(samples, test_size=0.2)
 train_generator = gen_imgs(train_samples, batch_size=BATCH_SIZE)
 validation_generator = gen_imgs(validation_samples, batch_size=BATCH_SIZE)
 
-# Define network architecture
+# Define model
 model = Sequential()
 model.add(Lambda(lambda x: x / 255.0 - 0.5, input_shape=(160, 320, 3)))
 model.add(Cropping2D(cropping=((70, 25), (0,0))))
@@ -97,12 +109,13 @@ model.add(Dense(100))
 model.add(Dense(50))
 model.add(Dense(10))
 model.add(Dense(1))
-
 model.compile(loss='mse', optimizer='adam')
 
+# Train model
 model.fit_generator(train_generator, np.ceil(len(train_samples) / BATCH_SIZE),
     validation_data=validation_generator,
     validation_steps=np.ceil(len(validation_samples) / BATCH_SIZE),
     epochs=5)
 
+# Save model
 model.save('model.h5')
